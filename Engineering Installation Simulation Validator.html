@@ -1093,6 +1093,18 @@
       return list;
     }
 
+    function finalPlacementPose(geom, length, height) {
+      const openingCenter = geom.entryLeft + geom.entryWidth / 2;
+      const minCx = length / 2;
+      const maxCx = geom.topWidth - length / 2;
+      const cx = Math.max(minCx, Math.min(maxCx, openingCenter));
+      return {
+        cx,
+        cy: geom.topGap + height / 2,
+        deg: 0
+      };
+    }
+
     function findPath(geom, length, height, keepParents) {
       if (length > geom.topWidth) return { ok: false, path: [] };
 
@@ -1116,10 +1128,11 @@
         };
       }
 
-      const finalY = geom.topGap + height / 2;
+      const finalPose = finalPlacementPose(geom, length, height);
+      const finalY = finalPose.cy;
       const startMinCx = length / 2;
       const startMaxCx = geom.topWidth - length / 2;
-      const preferredFinalCx = geom.entryLeft + geom.entryWidth / 2;
+      const preferredFinalCx = finalPose.cx;
       const finalCenters = [];
       for (let cx = startMinCx; cx <= startMaxCx + 0.001; cx += geom.grid) {
         finalCenters.push(cx);
@@ -1166,6 +1179,7 @@
             if (isEntryPose(geom, extended.cx, extended.cy, length, height, extended.deg)) {
               found.path.unshift(extended);
             }
+            found.path[found.path.length - 1] = finalPose;
           }
           return found;
         }
@@ -1245,7 +1259,8 @@
       partText.textContent = `${formatNumber(length)} x ${formatNumber(height)}`;
       partText.setAttribute("font-size", String(Math.max(8, Math.min(13, height * 0.32))));
       const ghostWidth = Math.min(length, geom.topWidth);
-      const ghostX = (geom.topWidth - ghostWidth) / 2;
+      const ghostPose = finalPlacementPose(geom, ghostWidth, height);
+      const ghostX = ghostPose.cx - ghostWidth / 2;
       ghost.setAttribute("x", String(ghostX + lineGap));
       ghost.setAttribute("y", String(geom.topGap + lineGap));
       ghost.setAttribute("width", String(Math.max(0, ghostWidth - lineGap * 2)));
